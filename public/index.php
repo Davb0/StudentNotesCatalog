@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // Insert note into the database
-    $stmt = $conn->prepare("INSERT INTO notes (student_name, note_content, subject, teacher_comments, absent, file) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO notes (student_name, note_content, subject, teacher_remarks, absent, file) VALUES (?, ?, ?, ?, ?, ?)");
     $stmt->bind_param('ssssds', $student_name, $note_content, $subject, $teacher_comments, $absent, $file);
     $stmt->execute();
 }
