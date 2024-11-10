@@ -47,10 +47,13 @@ $translations = [
         'note_deleted' => 'Note deleted successfully!',
         'no_notes' => 'No notes available.',
         'login_error' => 'Invalid username or password.',
-        'file_upload' => 'Attach File'
+        'file_upload' => 'Attach File',
+        'info' => 'Information',
+        'info_title' => 'More Information',
+        'info_text' => 'Catalog realized for testing knowledge. It is not real. It isnt neccesary to add an file, abscence or teacher remark. If there isnt abscence or remark write for each none.',
     ],
     'ro' => [
-        'title' => 'Catalogul Notițelor Elevilor',
+        'title' => 'Catalogul Notelor Elevilor',
         'login' => 'Autentificare',
         'logout' => 'Deconectare',
         'username' => 'Nume utilizator',
@@ -63,13 +66,16 @@ $translations = [
         'teacher_remarks' => 'Mențiuni ale Profesorului',
         'absence_details' => 'Detalii Absență (săptămâna aceasta)',
         'date' => 'Data',
-        'all_notes' => 'Toate Notițele',
+        'all_notes' => 'Toate Notele',
         'delete' => 'Șterge',
         'note_added' => 'Notă adăugată cu succes!',
         'note_deleted' => 'Notă ștearsă cu succes!',
-        'no_notes' => 'Nu sunt notițe disponibile.',
+        'no_notes' => 'Nu sunt note disponibile.',
         'login_error' => 'Nume utilizator sau parolă incorectă.',
-        'file_upload' => 'Atașează fișier'
+        'file_upload' => 'Atașează fișier',
+        'info' => 'Informații',
+        'info_title' => 'Mai multe informații',
+        'info_text' => 'Catalog realizat pentru testarea cunoștințelor. Nu este real. Nu este necesar să adăugați un fișier, absență sau observație a profesorului. Dacă nu există absență sau observație, scrieti nicuna.',
     ]
 ];
 $t = $translations[$lang];
@@ -142,62 +148,156 @@ $notes = file_exists('notes.txt') ? file('notes.txt', FILE_IGNORE_NEW_LINES) : [
     <title><?php echo $t['title']; ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
-        .container { width: 80%; margin: auto; }
-        .note { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
-        .delete-button { color: red; text-decoration: none; cursor: pointer; }
-        .delete-button:hover { color: darkred; }
-        .message { color: green; }
-        .login-form { max-width: 300px; margin: auto; padding: 20px; border: 1px solid #ddd; }
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f7f7f7;
+            color: #333;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        .note {
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .note p {
+            margin: 5px 0;
+        }
+        .delete-button {
+            color: red;
+            text-decoration: none;
+        }
+        .delete-button:hover {
+            color: darkred;
+        }
+        .message {
+            color: green;
+        }
+        .login-form, .add-note-form {
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .info-button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 20px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow: auto;
+        }
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 60%;
+            border-radius: 5px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover, .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1><?php echo $t['title']; ?></h1>
-    
-    <!-- Language Selector -->
-    <a href="index.php?lang=en">English</a> | <a href="index.php?lang=ro">Română</a>
 
-    <!-- Login Form or Logout Button -->
+<div class="container">
+    <div class="header">
+        <h1><?php echo $t['title']; ?></h1>
+
+        <!-- Language Selector -->
+        <a href="index.php?lang=en">English</a> | <a href="index.php?lang=ro">Română</a>
+
+        <!-- Info Button -->
+        <button class="info-button" id="infoBtn"><?php echo $t['info']; ?></button>
+    </div>
+
+    <!-- Info Modal -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2><?php echo $t['info_title']; ?></h2>
+            <p><?php echo $t['info_text']; ?></p>
+        </div>
+    </div>
+
+    <?php if (isset($message) && $message): ?>
+        <div class="message"><?php echo $message; ?></div>
+    <?php endif; ?>
+
     <?php if (!isset($_SESSION['loggedin']) || !$_SESSION['loggedin']): ?>
+
+        <!-- Login Form -->
         <div class="login-form">
             <h2><?php echo $t['login']; ?></h2>
             <form method="POST">
-                <input type="text" name="username" placeholder="<?php echo $t['username']; ?>" required><br>
-                <input type="password" name="password" placeholder="<?php echo $t['password']; ?>" required><br>
+                <input type="text" name="username" placeholder="<?php echo $t['username']; ?>" required><br><br>
+                <input type="password" name="password" placeholder="<?php echo $t['password']; ?>" required><br><br>
                 <button type="submit" name="login"><?php echo $t['submit']; ?></button>
             </form>
             <?php if (isset($loginError)): ?>
-                <p style="color:red;"><?php echo $t['login_error']; ?></p>
+                <div class="error"><?php echo $loginError; ?></div>
             <?php endif; ?>
         </div>
+
     <?php else: ?>
+
+        <!-- Logout Link -->
         <a href="index.php?logout=true"><?php echo $t['logout']; ?></a>
-        
-        <!-- Display Messages -->
-        <?php if ($message): ?>
-            <p class="message"><?php echo $message; ?></p>
-        <?php endif; ?>
 
-        <!-- Form for Adding Notes -->
-        <form action="index.php?lang=<?php echo $lang; ?>" method="POST" enctype="multipart/form-data">
-            <input type="text" name="student_name" placeholder="<?php echo $t['student_name']; ?>" required>
-            <input type="text" name="subject" placeholder="<?php echo $t['subject']; ?>" required>
-            <textarea name="note_content" placeholder="<?php echo $t['note']; ?>" required></textarea>
-            <textarea name="teacher_remarks" placeholder="<?php echo $t['teacher_remarks']; ?>"></textarea>
-            <textarea name="absence_details" placeholder="<?php echo $t['absence_details']; ?>"></textarea>
-            <label><?php echo $t['date']; ?>:</label>
-            <input type="text" id="date" name="date" required>
-            <label><?php echo $t['file_upload']; ?>:</label>
-            <input type="file" name="file"><br>
-            <button type="submit" name="add_note"><?php echo $t['add_note']; ?></button>
-        </form>
+        <!-- Add Note Form -->
+        <div class="add-note-form">
+            <h2><?php echo $t['add_note']; ?></h2>
+            <form method="POST" enctype="multipart/form-data">
+                <input type="text" name="student_name" placeholder="<?php echo $t['student_name']; ?>" required><br><br>
+                <input type="text" name="subject" placeholder="<?php echo $t['subject']; ?>" required><br><br>
+                <textarea name="note_content" placeholder="<?php echo $t['note']; ?>" required></textarea><br><br>
+                <textarea name="teacher_remarks" placeholder="<?php echo $t['teacher_remarks']; ?>"></textarea><br><br>
+                <textarea name="absence_details" placeholder="<?php echo $t['absence_details']; ?>"></textarea><br><br>
+                <input type="text" name="date" class="flatpickr" placeholder="<?php echo $t['date']; ?>" required><br><br>
+                <input type="file" name="file"><br><br>
+                <button type="submit" name="add_note"><?php echo $t['submit']; ?></button>
+            </form>
+        </div>
 
-        <!-- Display All Notes -->
+        <!-- Display Notes -->
         <h2><?php echo $t['all_notes']; ?></h2>
         <?php if (count($notes) > 0): ?>
             <?php foreach ($notes as $note): ?>
                 <?php
-                list($id, $studentName, $subject, $noteContent, $teacherRemarks, $absenceDetails, $date, $filePath) = explode('|', $note);
+                list($noteID, $studentName, $subject, $noteContent, $teacherRemarks, $absenceDetails, $date, $filePath) = explode('|', $note);
                 ?>
                 <div class="note">
                     <p><strong><?php echo $t['student_name']; ?>:</strong> <?php echo $studentName; ?></p>
@@ -207,20 +307,44 @@ $notes = file_exists('notes.txt') ? file('notes.txt', FILE_IGNORE_NEW_LINES) : [
                     <p><strong><?php echo $t['absence_details']; ?>:</strong> <?php echo $absenceDetails; ?></p>
                     <p><strong><?php echo $t['date']; ?>:</strong> <?php echo $date; ?></p>
                     <?php if ($filePath): ?>
-                        <p><strong>File:</strong> <a href="<?php echo $filePath; ?>" target="_blank">View File</a></p>
+                        <p><strong><?php echo $t['file_upload']; ?>:</strong> <a href="<?php echo $filePath; ?>" target="_blank">Download</a></p>
                     <?php endif; ?>
-                    <a href="index.php?delete_id=<?php echo $id; ?>&lang=<?php echo $lang; ?>" class="delete-button"><?php echo $t['delete']; ?></a>
+                    <a href="index.php?delete_id=<?php echo $noteID; ?>" class="delete-button"><?php echo $t['delete']; ?></a>
                 </div>
             <?php endforeach; ?>
         <?php else: ?>
             <p><?php echo $t['no_notes']; ?></p>
         <?php endif; ?>
+
     <?php endif; ?>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
-    flatpickr("#date", { enableTime: false, dateFormat: "Y-m-d" });
+    // Initialize date picker
+    flatpickr(".flatpickr", {
+        dateFormat: "Y-m-d"
+    });
+
+    // Modal functionality
+    var modal = document.getElementById("myModal");
+    var btn = document.getElementById("infoBtn");
+    var span = document.getElementsByClassName("close")[0];
+
+    btn.onclick = function() {
+        modal.style.display = "block";
+    }
+
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
 </script>
+
 </body>
 </html>

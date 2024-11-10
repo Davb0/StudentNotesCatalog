@@ -1,29 +1,19 @@
 <?php
-// File containing notes
-$file = 'notes.txt';
+if (!isset($_GET['note_id'])) {
+    die("Note ID is required.");
+}
 
-// Check if index parameter is set
-if (isset($_GET['index'])) {
-    $index = (int)$_GET['index'];
+$noteID = $_GET['note_id'];
+$notes = file_exists('notes.txt') ? file('notes.txt', FILE_IGNORE_NEW_LINES) : [];
+$newNotes = [];
 
-    // Load notes from the file
-    $notes = file($file, FILE_IGNORE_NEW_LINES);
-
-    // Check if index is valid
-    if (isset($notes[$index])) {
-        // Remove the note at the specified index
-        unset($notes[$index]);
-
-        // Save updated notes back to the file
-        file_put_contents($file, implode("\n", $notes) . "\n");
-
-        // Redirect to index.php with success message
-        header("Location: index.php?deleted=true");
-        exit;
+foreach ($notes as $note) {
+    if (strpos($note, $noteID . '|') !== 0) {  // Keep notes that do not match the ID
+        $newNotes[] = $note;
     }
 }
 
-// Redirect to index.php if index is not valid
+// Save the updated notes list
+file_put_contents('notes.txt', implode("\n", $newNotes) . "\n");
 header("Location: index.php");
-exit;
-?>
+exit();
